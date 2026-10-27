@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Attendance Management System</title>
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: Arial, sans-serif; background: #f3f6fb; color: #1f2937; }
+    header { background: #173b70; color: white; padding: 24px 5%; }
+    header h1 { margin: 0 0 6px; font-size: 27px; }
+    header p { margin: 0; color: #dbeafe; }
+    main { max-width: 1100px; margin: 24px auto; padding: 0 16px; }
+    .card { background: white; border-radius: 12px; padding: 20px; margin-bottom: 20px; box-shadow: 0 3px 12px #152b4b12; }
+    h2 { margin-top: 0; color: #173b70; font-size: 20px; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; }
+    input, select { width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 7px; margin-top: 5px; }
+    label { font-size: 14px; font-weight: bold; }
+    button { background: #2563eb; color: white; border: 0; padding: 10px 15px; border-radius: 7px; cursor: pointer; margin-top: 12px; }
+    button:hover { background: #1d4ed8; }
+    table { width: 100%; border-collapse: collapse; min-width: 570px; }
+    th, td { padding: 11px; text-align: left; border-bottom: 1px solid #e5e7eb; }
+    th { background: #eff6ff; }
+    .table-wrap { overflow-x: auto; }
+    .message { padding: 11px; border-radius: 7px; margin-bottom: 12px; }
+    .success { background: #dcfce7; color: #166534; }
+    .error { background: #fee2e2; color: #991b1b; }
+    .muted { color: #64748b; font-size: 14px; }
+    footer { text-align: center; padding: 20px; color: #64748b; }
+  </style>
+</head>
+<body>
+<header>
+  <h1>Attendance Management System</h1>
+  <p>Student attendance tracking dashboard</p>
+</header>
+<main>
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% for category, message in messages %}
+      <div class="message {{ category }}">{{ message }}</div>
+    {% endfor %}
+  {% endwith %}
+
+  <section class="card">
+    <h2>Add Student</h2>
+    <form method="post">
+      <input type="hidden" name="action" value="add_student">
+      <div class="grid">
+        <div><label>Student Name</label><input name="name" placeholder="e.g. Anu Kumar" required></div>
+        <div><label>Roll Number</label><input name="roll_no" placeholder="e.g. CSE001" required></div>
+        <div><label>Department</label><input name="department" placeholder="e.g. CSE" required></div>
+      </div>
+      <button type="submit">Add Student</button>
+    </form>
+  </section>
+
+  <section class="card">
+    <h2>Mark Attendance — {{ today }}</h2>
+    {% if students %}
+    <form method="post">
+      <input type="hidden" name="action" value="mark_attendance">
+      <div class="grid">
+        <div><label>Attendance Date</label><input type="date" name="attendance_date" value="{{ today }}" required></div>
+      </div>
+      <div class="table-wrap" style="margin-top:14px">
+        <table>
+          <thead><tr><th>Roll No.</th><th>Name</th><th>Department</th><th>Status</th></tr></thead>
+          <tbody>
+          {% for student in students %}
+            <tr>
+              <td>{{ student.roll_no }}</td><td>{{ student.name }}</td><td>{{ student.department }}</td>
+              <td>
+                <select name="status_{{ student.id }}">
+                  <option value="">Not marked</option>
+                  <option value="Present" {% if student.today_status == 'Present' %}selected{% endif %}>Present</option>
+                  <option value="Absent" {% if student.today_status == 'Absent' %}selected{% endif %}>Absent</option>
+                </select>
+              </td>
+            </tr>
+          {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      <button type="submit">Save Attendance</button>
+    </form>
+    {% else %}
+      <p class="muted">No students added yet. Add a student above to begin.</p>
+    {% endif %}
+  </section>
+
+  <section class="card">
+    <h2>Attendance Percentage</h2>
+    {% if summary %}
+    <div class="table-wrap"><table>
+      <thead><tr><th>Roll No.</th><th>Name</th><th>Days Marked</th><th>Present</th><th>Attendance %</th></tr></thead>
+      <tbody>
+      {% for item in summary %}
+        {% set present = item.present_days or 0 %}
+        {% set total = item.total_days or 0 %}
+        <tr><td>{{ item.roll_no }}</td><td>{{ item.name }}</td><td>{{ total }}</td><td>{{ present }}</td>
+        <td>{% if total %}{{ "%.1f"|format(present * 100 / total) }}%{% else %}0.0%{% endif %}</td></tr>
+      {% endfor %}
+      </tbody>
+    </table></div>
+    {% else %}<p class="muted">Attendance summary will appear after students are added.</p>{% endif %}
+  </section>
+
+  <section class="card">
+    <h2>Recent Attendance Records</h2>
+    {% if records %}
+    <div class="table-wrap"><table>
+      <thead><tr><th>Date</th><th>Roll No.</th><th>Name</th><th>Status</th></tr></thead>
+      <tbody>{% for record in records %}
+        <tr><td>{{ record.attendance_date }}</td><td>{{ record.roll_no }}</td><td>{{ record.name }}</td><td>{{ record.status }}</td></tr>
+      {% endfor %}</tbody>
+    </table></div>
+    {% else %}<p class="muted">No attendance records saved yet.</p>{% endif %}
+  </section>
+</main>
+<footer>Mini Project · Python Flask · SQLite</footer>
+</body>
+</html>
